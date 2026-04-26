@@ -9,7 +9,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { useAllBookings } from '../hooks/useBookings';
 import { useAuth } from '../store/AuthContext';
-import { formatDate, parseDateStr, combineDateAndTime } from '../utils/dateHelpers';
+import { formatDate, parseDateStr, combineDateAndTime, isPastDate } from '../utils/dateHelpers';
 import Badge from '../components/common/Badge';
 import Spinner from '../components/common/Spinner';
 import EmptyState from '../components/common/EmptyState';
@@ -55,8 +55,36 @@ const DashboardPage = () => {
 
   const handleEventClick = (event) => setSelectedBooking(event.resource);
 
+  const dayPropGetter = (date) => {
+    const dStr = format(date, 'yyyy-MM-dd');
+    if (isPastDate(dStr)) {
+      return {
+        className: 'past-day',
+        style: {
+          backgroundColor: 'rgba(15, 23, 42, 0.4)',
+          opacity: 0.6,
+          cursor: 'not-allowed'
+        }
+      };
+    }
+    return {};
+  };
+
   const handleDayClick = (date) => {
-    setSelectedDay(format(date, 'yyyy-MM-dd'));
+    const dStr = format(date, 'yyyy-MM-dd');
+    if (isPastDate(dStr)) {
+      toast.error("You can't book for past dates. Please select a future date.", {
+        icon: '📅',
+        style: {
+          borderRadius: '10px',
+          background: '#1e293b',
+          color: '#fff',
+          border: '1px solid rgba(239, 68, 68, 0.2)'
+        }
+      });
+      return;
+    }
+    setSelectedDay(dStr);
   };
 
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, today: 0 });
@@ -140,6 +168,7 @@ const DashboardPage = () => {
               onSelectSlot={(slotInfo) => handleDayClick(slotInfo.start)}
               onDrillDown={(date) => handleDayClick(date)}
               longPressThreshold={10}
+              dayPropGetter={dayPropGetter}
               eventPropGetter={() => ({})}
               className={`transition-opacity duration-300 ${loading && calendarEvents.length === 0 ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}
             />
