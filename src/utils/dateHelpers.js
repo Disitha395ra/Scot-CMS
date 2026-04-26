@@ -66,6 +66,16 @@ export const toMinutes = (time) => {
 export const todayStr = () => format(new Date(), 'yyyy-MM-dd');
 
 /**
+ * Combine YYYY-MM-DD and HH:MM into a JS Date object.
+ */
+export const combineDateAndTime = (dateStr, timeStr) => {
+  if (!dateStr || !timeStr) return null;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const [hh, mm] = timeStr.split(':').map(Number);
+  return new Date(y, m - 1, d, hh, mm);
+};
+
+/**
  * Parse a YYYY-MM-DD string into a JS Date (local time, midnight).
  */
 export const parseDateStr = (str) => {

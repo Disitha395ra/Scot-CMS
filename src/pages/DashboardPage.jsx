@@ -9,7 +9,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { useAllBookings } from '../hooks/useBookings';
 import { useAuth } from '../store/AuthContext';
-import { formatDate, parseDateStr } from '../utils/dateHelpers';
+import { formatDate, parseDateStr, combineDateAndTime } from '../utils/dateHelpers';
 import Badge from '../components/common/Badge';
 import Spinner from '../components/common/Spinner';
 import EmptyState from '../components/common/EmptyState';
@@ -46,8 +46,8 @@ const DashboardPage = () => {
     bookings.map(b => ({
       id:    b.id,
       title: `${b.room} — ${b.startTime}`,
-      start: parseDateStr(b.date) || new Date(),
-      end:   parseDateStr(b.date) || new Date(),
+      start: combineDateAndTime(b.date, b.startTime) || new Date(),
+      end:   combineDateAndTime(b.date, b.endTime) || new Date(),
       resource: b,
     })),
     [bookings],
