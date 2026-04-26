@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helpers ──────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isScotUser() {
+      return isSignedIn() &&
+             request.auth.token.email != null &&
+             request.auth.token.email.matches('.*@scot\\.lk');
+    }
+    function isAdmin() {
+      return isScotUser() &&
+             exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
+    }
+    function isOwner(userId) {
+      return isScotUser() && request.auth.uid == userId;
+    }
+
+    // ─── Users ────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read:   if isScotUser();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ─── Bookings ─────────────────────────────────────────────────────────
+    match /bookings/{bookingId} {
+      allow read:   if isScotUser();
+      allow create: if isScotUser() &&
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.status == 'Pending';
+      // Only admins can update status; users cannot change status themselves
+      allow update: if isAdmin();
+      // User can delete own Pending booking; admin can delete any
+      allow delete: if (isOwner(resource.data.userId) && resource.data.status == 'Pending')
+                    || isAdmin();
+    }
+
+    // ─── Admins ───────────────────────────────────────────────────────────
+    match /admins/{email} {
+      allow read:   if isScotUser();
+      allow write:  if isAdmin();
+    }
+  }
+}
