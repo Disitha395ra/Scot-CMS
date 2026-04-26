@@ -4,7 +4,7 @@
 import React from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { TIME_SLOTS } from '../../utils/constants';
+import { TIME_SLOTS, ROOM_CAPACITY } from '../../utils/constants';
 
 const ErrorMsg = ({ msg }) =>
   msg ? <p className="text-xs text-red-400 mt-1 animate-fade-in">{msg}</p> : null;
@@ -41,9 +41,21 @@ const Step3Details = ({ formData, update, errors, setErrors, onNext, onBack }) =
     if (!formData.programmeName)   errs.programmeName   = 'Please select a programme name.';
 
     if (Object.keys(errs).length) { setErrors(errs); return; }
+
+    const roomMaxSeats = ROOM_CAPACITY[formData.room] || 200;
+    if (Number(formData.seats) > roomMaxSeats) {
+      const msg = `You exceed max capacity of this classroom. Max capacity of this room is ${roomMaxSeats}. If you want to exceed this number, enter the reason. Admin panel will review it and inform you.\n\nDo you want to proceed anyway?`;
+      if (!window.confirm(msg)) {
+        return;
+      }
+    }
+
     setErrors({});
     onNext();
   };
+
+  const roomMaxSeats = ROOM_CAPACITY[formData.room] || 200;
+  const isOverCapacity = Number(formData.seats) > roomMaxSeats;
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -124,6 +136,11 @@ const Step3Details = ({ formData, update, errors, setErrors, onNext, onBack }) =
           value={formData.seats}
           onChange={e => { update({ seats: e.target.value }); clearErr('seats'); }}
         />
+        {isOverCapacity && (
+          <p className="text-xs text-yellow-400 mt-2 animate-fade-in bg-yellow-400/10 p-2 rounded border border-yellow-400/30">
+            ⚠️ You exceed max capacity of this classroom. Max capacity of this room is {roomMaxSeats}. If you want to exceed this number, enter the reason. Admin panel will review it and inform you.
+          </p>
+        )}
         <ErrorMsg msg={errors.seats} />
       </div>
 

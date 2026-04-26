@@ -49,3 +49,15 @@ export const TIME_SLOTS = (() => {
 
 export const MAX_SEATS = 200;
 export const MIN_SEATS = 1;
+
+// Per-room seat capacity limits.
+// Keys match the room names in BUILDINGS exactly.
+export const ROOM_CAPACITY = {
+  'classroom 103': 20,
+  'Student Classroom 101': 24,
+  'Student Classroom 102': 24,
+  'Student Classroom 201': 24,
+  'Student Classroom 202': 24,
+  // Building 2 third floor – 301 not listed in BUILDINGS yet; added for completeness
+  'Student Classroom 301': 30,
+};
