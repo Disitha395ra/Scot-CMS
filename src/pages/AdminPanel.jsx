@@ -114,60 +114,62 @@ const AdminPanel = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-accent-500/15 flex items-center justify-center">
-            <ShieldCheckIcon className="w-5 h-5 text-accent-400" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-accent-500/15 flex items-center justify-center shrink-0">
+            <ShieldCheckIcon className="w-4 h-4 sm:w-5 sm:h-5 text-accent-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
-            <p className="text-slate-400 text-sm">Manage all room booking requests.</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">Admin Panel</h1>
+            <p className="text-slate-400 text-xs sm:text-sm">Manage all room booking requests.</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="badge bg-accent-500/20 text-accent-400 border border-accent-500/30 text-sm px-3 py-1.5">
-            {bookings.length} total bookings
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <div className="badge bg-accent-500/20 text-accent-400 border border-accent-500/30 text-xs sm:text-sm px-2.5 py-1 sm:px-3 sm:py-1.5">
+            {bookings.length} total
           </div>
           <button onClick={handleDownloadCSV} className="btn-secondary btn-sm flex items-center gap-2">
             <ArrowDownTrayIcon className="w-4 h-4" />
-            Download Details
+            <span className="hidden xs:inline">Download</span> CSV
           </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="glass-dark p-4 mb-6 flex flex-col sm:flex-row gap-4">
-        {/* Search */}
-        <div className="relative flex-1">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <input
-            id="admin-search"
-            type="search"
-            placeholder="Search by room, user, reason…"
-            className="input pl-9"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+      <div className="glass-dark p-3 sm:p-4 mb-4 sm:mb-6 flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search */}
+          <div className="relative flex-1">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input
+              id="admin-search"
+              type="search"
+              placeholder="Search by room, user, reason…"
+              className="input pl-9"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          {/* Date Filter */}
+          <div className="relative">
+            <input
+              type="date"
+              className="input w-full sm:w-auto"
+              value={dateFilter}
+              onChange={e => setDateFilter(e.target.value)}
+            />
+          </div>
         </div>
-        {/* Date Filter */}
-        <div className="relative">
-          <input
-            type="date"
-            className="input w-full sm:w-auto"
-            value={dateFilter}
-            onChange={e => setDateFilter(e.target.value)}
-          />
-        </div>
-        {/* Status filter */}
-        <div className="flex gap-2 flex-wrap">
+        {/* Status filter - scrollable row on mobile */}
+        <div className="flex gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-none">
           {STATUS_FILTERS.map(f => (
             <button
               key={f}
               id={`filter-${f.toLowerCase()}`}
               onClick={() => setFilter(f)}
-              className={`btn btn-sm transition-all ${
+              className={`btn btn-sm whitespace-nowrap transition-all ${
                 filter === f
                   ? 'bg-primary-600 text-white border-primary-500'
                   : 'btn-secondary'

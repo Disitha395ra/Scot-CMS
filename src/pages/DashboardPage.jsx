@@ -85,67 +85,68 @@ const DashboardPage = () => {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-slate-400 text-sm mt-0.5">
+          <h1 className="text-xl sm:text-2xl font-bold text-white">Dashboard</h1>
+          <p className="text-slate-400 text-xs sm:text-sm mt-0.5">
             {format(new Date(), 'EEEE, dd MMMM yyyy')}
           </p>
         </div>
-        <Link to="/book" className="btn-primary">
+        <Link to="/book" className="btn-primary self-start sm:self-auto">
           <AcademicCapIcon className="w-4 h-4" />
           Book a Room
         </Link>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
           { label: 'Total Bookings', value: stats.total,    color: 'text-primary-400', bg: 'bg-primary-500/10' },
           { label: 'Pending',        value: stats.pending,  color: 'text-amber-400',   bg: 'bg-amber-500/10' },
           { label: 'Approved',       value: stats.approved, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
           { label: "Today's Events", value: stats.today,    color: 'text-accent-400',  bg: 'bg-accent-500/10' },
         ].map(s => (
-          <div key={s.label} className="glass p-4">
-            <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
-              <CalendarDaysIcon className={`w-5 h-5 ${s.color}`} />
+          <div key={s.label} className="glass p-3 sm:p-4">
+            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl ${s.bg} flex items-center justify-center mb-2 sm:mb-3`}>
+              <CalendarDaysIcon className={`w-4 h-4 sm:w-5 sm:h-5 ${s.color}`} />
             </div>
-            <p className={`text-2xl font-bold ${s.color}`}>{statsLoading ? '—' : s.value}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+            <p className={`text-xl sm:text-2xl font-bold ${s.color}`}>{statsLoading ? '—' : s.value}</p>
+            <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5 leading-tight">{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* Main grid */}
-      <div className="grid lg:grid-cols-5 gap-6">
+      <div className="grid lg:grid-cols-5 gap-4 sm:gap-6">
         {/* Calendar — 3 cols */}
-        <div className="lg:col-span-3 glass p-4 sm:p-6">
-          <h2 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+        <div className="lg:col-span-3 glass p-3 sm:p-6">
+          <h2 className="text-sm font-semibold text-slate-300 mb-3 sm:mb-4 flex items-center gap-2">
             <CalendarDaysIcon className="w-4 h-4 text-primary-400" />
             Booking Calendar
             {loading && <Spinner size="sm" className="ml-2" />}
           </h2>
-          <Calendar
-            localizer={localizer}
-            events={calendarEvents}
-            defaultView="month"
-            views={['month']}
-            style={{ height: 420 }}
-            date={currentDate}
-            onNavigate={setCurrentDate}
-            onSelectEvent={handleEventClick}
-            selectable={true}
-            onSelectSlot={(slotInfo) => handleDayClick(slotInfo.start)}
-            onDrillDown={(date) => handleDayClick(date)}
-            eventPropGetter={() => ({})}
-            className={`transition-opacity duration-300 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}
-          />
+          <div className="dashboard-calendar">
+            <Calendar
+              localizer={localizer}
+              events={calendarEvents}
+              defaultView="month"
+              views={['month']}
+              date={currentDate}
+              onNavigate={setCurrentDate}
+              onSelectEvent={handleEventClick}
+              selectable={true}
+              onSelectSlot={(slotInfo) => handleDayClick(slotInfo.start)}
+              onDrillDown={(date) => handleDayClick(date)}
+              eventPropGetter={() => ({})}
+              className={`transition-opacity duration-300 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}
+            />
+          </div>
         </div>
 
         {/* Today's bookings — 2 cols */}
-        <div className="lg:col-span-2 glass p-4 sm:p-6 flex flex-col">
+        <div className="lg:col-span-2 glass p-3 sm:p-6 flex flex-col">
           <h2 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
             <ClockIcon className="w-4 h-4 text-accent-400" />
             Today's Bookings

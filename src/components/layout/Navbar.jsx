@@ -86,7 +86,7 @@ const Navbar = () => {
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-primary-600 via-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/30 group-hover:shadow-primary-500/50 group-hover:scale-105 transition-all duration-300">
               <span className="text-white font-black text-xl tracking-tighter">S</span>
             </div>
-            <div className="flex flex-col hidden sm:flex">
+            <div className="hidden sm:flex flex-col">
               <span className="font-extrabold text-white text-base leading-tight tracking-wide group-hover:text-primary-300 transition-colors duration-300">
                 SCOT CMS
               </span>
@@ -102,11 +102,11 @@ const Navbar = () => {
           </div>
 
           {/* Enhanced User area */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {showSignOut && (
-              <div className="flex items-center gap-4 pl-4 border-l border-white/10">
+              <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-white/10">
                 {user ? (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <div className="text-right hidden lg:block">
                       <p className="text-sm font-bold text-white leading-none mb-1">
                         {user.displayName || user.email.split('@')[0]}
@@ -118,12 +118,12 @@ const Navbar = () => {
                     <img
                       src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email)}&background=4f46e5&color=fff&bold=true`}
                       alt={user.displayName || 'User'}
-                      className="w-10 h-10 rounded-full ring-2 ring-primary-500/30 hover:ring-primary-500 transition-all duration-300 shadow-lg object-cover"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full ring-2 ring-primary-500/30 hover:ring-primary-500 transition-all duration-300 shadow-lg object-cover"
                     />
                   </div>
                 ) : (
-                  <div className="px-3.5 py-1.5 rounded-full bg-accent-500/10 text-accent-400 border border-accent-500/20 text-xs font-bold uppercase tracking-wide hidden sm:block shadow-[0_0_15px_rgba(236,72,153,0.15)]">
-                    Admin Mode
+                  <div className="px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-accent-500/10 text-accent-400 border border-accent-500/20 text-[10px] sm:text-xs font-bold uppercase tracking-wide shadow-[0_0_15px_rgba(236,72,153,0.15)]">
+                    Admin
                   </div>
                 )}
                 
@@ -139,7 +139,7 @@ const Navbar = () => {
             
             {/* Mobile hamburger */}
             <button
-              className="md:hidden p-2.5 rounded-xl bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all duration-300 border border-white/5"
+              className="md:hidden p-2 sm:p-2.5 rounded-xl bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all duration-300 border border-white/5"
               onClick={() => setMobileOpen(o => !o)}
               aria-label="Toggle menu"
             >
