@@ -139,8 +139,9 @@ const DashboardPage = () => {
               selectable={true}
               onSelectSlot={(slotInfo) => handleDayClick(slotInfo.start)}
               onDrillDown={(date) => handleDayClick(date)}
+              longPressThreshold={10}
               eventPropGetter={() => ({})}
-              className={`transition-opacity duration-300 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}
+              className={`transition-opacity duration-300 ${loading && calendarEvents.length === 0 ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}
             />
           </div>
         </div>

@@ -88,6 +88,7 @@
   @apply font-sans;
   background: transparent !important;
   color: #cbd5e1 !important;
+  touch-action: manipulation;
 }
 .rbc-header {
   @apply border-white/10 !important;
@@ -97,6 +98,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 8px 0 !important;
+  cursor: pointer;
 }
 .rbc-month-view, .rbc-time-view, .rbc-agenda-view {
   border: 1px solid rgba(255,255,255,0.08) !important;
@@ -116,8 +118,10 @@
   font-weight: 500 !important;
 }
 .rbc-event.rbc-selected { box-shadow: 0 0 0 3px rgba(99,102,241,0.5) !important; }
-.rbc-date-cell { color: #94a3b8 !important; font-size: 0.8rem; }
+.rbc-date-cell { color: #94a3b8 !important; font-size: 0.8rem; padding: 4px 8px !important; }
 .rbc-date-cell.rbc-now a { color: #818cf8 !important; font-weight: 700; }
+.rbc-day-bg { cursor: pointer; transition: background-color 0.2s; }
+.rbc-day-bg:hover { background: rgba(255,255,255,0.03) !important; }
 .rbc-toolbar button {
   @apply text-slate-300 border-white/20 !important;
   background: rgba(255,255,255,0.06) !important;
