@@ -16,12 +16,28 @@ import MyBookingsPage from './pages/MyBookingsPage';
 import AdminPanel     from './pages/AdminPanel';
 import AdminLoginPage from './pages/AdminLoginPage';
 
-const Layout = ({ children }) => (
-  <div className="min-h-screen bg-surface-900">
-    <Navbar />
-    <main className="pb-12">{children}</main>
-  </div>
-);
+const Layout = ({ children }) => {
+  const currentYear = new Date().getFullYear();
+  return (
+    <div className="min-h-screen bg-surface-900 flex flex-col">
+      <Navbar />
+      <main className="flex-1 pb-12">{children}</main>
+      <footer className="w-full py-6 mt-auto text-center text-sm text-slate-400 border-t border-white/5 bg-[#0B0F19]/50 backdrop-blur-sm">
+        <p>
+          &copy; {currentYear} Scot Campus Class-Room Booking System. Developed by{' '}
+          <a
+            href="https://disitha-profile.web.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-400 hover:text-primary-300 transition-colors font-medium profile-link"
+          >
+            Disitha Ranasinghe
+          </a>
+        </p>
+      </footer>
+    </div>
+  );
+};
 
 const AdminRoute = () => {
   const [isAuthenticated, setIsAuthenticated] = React.useState(
