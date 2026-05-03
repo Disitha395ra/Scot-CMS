@@ -47,7 +47,9 @@ const AdminPanel = () => {
         (b.userEmail    || '').toLowerCase().includes(q) ||
         (b.building     || '').toLowerCase().includes(q) ||
         (b.reason       || '').toLowerCase().includes(q) ||
-        (b.programmeName|| '').toLowerCase().includes(q)
+        (b.programmeName|| '').toLowerCase().includes(q) ||
+        (b.department   || '').toLowerCase().includes(q) ||
+        (b.generatorReason|| '').toLowerCase().includes(q)
       );
     }
     return list;
@@ -56,13 +58,16 @@ const AdminPanel = () => {
   const handleDownloadCSV = () => {
     if (filtered.length === 0) return toast.error('No records to download');
     
-    const headers = ['Booked By', 'Email', 'Building', 'Room', 'Programme', 'Date', 'Start', 'End', 'Seats', 'Status', 'Reason', 'Admin Reason'];
+    const headers = ['Booked By', 'Email', 'Building', 'Room', 'Department', 'Programme', 'Generator Required', 'Generator Reason', 'Date', 'Start', 'End', 'Seats', 'Status', 'Reason', 'Admin Reason'];
     const rows = filtered.map(b => [
       `"${b.userName || b.userEmail}"`,
       `"${b.userEmail}"`,
       `"${b.building}"`,
       `"${b.room}"`,
+      `"${b.department || ''}"`,
       `"${b.programmeName || ''}"`,
+      `"${b.generatorRequired ? 'Yes' : 'No'}"`,
+      `"${b.generatorReason || ''}"`,
       `"${b.date}"`,
       `"${b.startTime}"`,
       `"${b.endTime}"`,
@@ -213,8 +218,13 @@ const AdminPanel = () => {
                     <td className="table-cell">
                       <p className="font-medium text-slate-200">{b.room}</p>
                       <p className="text-xs text-slate-500">
-                        {b.building}{b.programmeName ? ` • ${b.programmeName}` : ''}
+                        {b.building}{b.department ? ` • ${b.department}` : ''}{b.programmeName ? ` • ${b.programmeName}` : ''}
                       </p>
+                      {b.generatorRequired && (
+                        <p className="text-xs text-amber-400 mt-1">
+                          ⚡ Generator ({b.generatorReason})
+                        </p>
+                      )}
                     </td>
                     <td className="table-cell">
                       <p className="text-slate-200">{formatDate(b.date)}</p>
@@ -268,8 +278,13 @@ const AdminPanel = () => {
                   <div>
                     <p className="font-semibold text-white">{b.room}</p>
                     <p className="text-xs text-slate-500">
-                      {b.building}{b.programmeName ? ` • ${b.programmeName}` : ''}
+                      {b.building}{b.department ? ` • ${b.department}` : ''}{b.programmeName ? ` • ${b.programmeName}` : ''}
                     </p>
+                    {b.generatorRequired && (
+                      <p className="text-xs text-amber-400 mt-0.5">
+                        ⚡ Generator: {b.generatorReason}
+                      </p>
+                    )}
                   </div>
                   <Badge status={b.status} />
                 </div>

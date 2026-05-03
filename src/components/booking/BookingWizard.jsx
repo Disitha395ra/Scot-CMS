@@ -48,7 +48,10 @@ const BookingWizard = () => {
     seats:           '',
     reason:          '',
     supervisorEmail: '',
+    department:      '',
     programmeName:   '',
+    generatorRequired: false,
+    generatorReason: '',
   });
 
   // If initial values are set, jump to Step 3 details
@@ -122,7 +125,10 @@ const BookingWizard = () => {
           seats:           Number(formData.seats),
           reason:          formData.reason.trim(),
           supervisorEmail: formData.supervisorEmail.trim().toLowerCase(),
+          department:      formData.department,
           programmeName:   formData.programmeName,
+          generatorRequired: formData.generatorRequired,
+          generatorReason: formData.generatorRequired ? formData.generatorReason : '',
         }),
         8000,
         null
@@ -150,7 +156,10 @@ const BookingWizard = () => {
         seats:           Number(formData.seats),
         reason:          formData.reason.trim(),
         supervisorEmail: formData.supervisorEmail.trim().toLowerCase(),
+        department:      formData.department,
         programmeName:   formData.programmeName,
+        generatorRequired: formData.generatorRequired,
+        generatorReason: formData.generatorRequired ? formData.generatorReason : '',
         status:          'Pending',
       };
       sendNewBookingEmail(payload);  // fire and forget

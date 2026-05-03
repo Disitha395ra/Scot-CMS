@@ -26,9 +26,13 @@ const Step4Confirm = ({ formData: f, onBack, onSubmit, loading }) => (
       <Row label="Date"        value={formatDate(f.date)} />
       <Row label="Time"        value={`${f.startTime} – ${f.endTime}`} />
       <Row label="Seats"       value={f.seats} />
+      <Row label="Department"  value={f.department} />
       <Row label="Programme"   value={f.programmeName} />
       <Row label="Reason"      value={f.reason} />
       <Row label="Supervisor"  value={f.supervisorEmail} />
+      {f.generatorRequired && (
+        <Row label="Generator"   value={`Yes (${f.generatorReason})`} />
+      )}
     </div>
 
     <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm text-amber-300">

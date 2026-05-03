@@ -37,8 +37,10 @@ const Step3Details = ({ formData, update, errors, setErrors, onNext, onBack }) =
     if (!formData.endTime)         errs.endTime         = 'Please select an end time.';
     if (!formData.seats)           errs.seats           = 'Please enter number of seats.';
     if (!formData.reason?.trim())  errs.reason          = 'Please provide a reason.';
-    if (!formData.supervisorEmail) errs.supervisorEmail = 'Supervisor email is required.';
+    if (!formData.department)      errs.department      = 'Please select a department.';
     if (!formData.programmeName)   errs.programmeName   = 'Please select a programme name.';
+    if (formData.generatorRequired && !formData.generatorReason) errs.generatorReason = 'Please select a reason for the generator.';
+    if (!formData.supervisorEmail) errs.supervisorEmail = 'Supervisor email is required.';
 
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
@@ -158,13 +160,32 @@ const Step3Details = ({ formData, update, errors, setErrors, onNext, onBack }) =
         <ErrorMsg msg={errors.reason} />
       </div>
 
+      {/* Department */}
+      <div className="input-group">
+        <label className="input-label" htmlFor="department">Select Department *</label>
+        <select
+          id="department"
+          className="input"
+          value={formData.department || ''}
+          onChange={e => { update({ department: e.target.value }); clearErr('department'); }}
+        >
+          <option value="">— select —</option>
+          <option value="C & C">C & C</option>
+          <option value="E & E">E & E</option>
+          <option value="SoBM">SoBM</option>
+          <option value="M & M">M & M</option>
+          <option value="Other">Other</option>
+        </select>
+        <ErrorMsg msg={errors.department} />
+      </div>
+
       {/* Programme Name */}
       <div className="input-group">
         <label className="input-label" htmlFor="programme-name">Programme Name *</label>
         <select
           id="programme-name"
           className="input"
-          value={formData.programmeName}
+          value={formData.programmeName || ''}
           onChange={e => { update({ programmeName: e.target.value }); clearErr('programmeName'); }}
         >
           <option value="">— select —</option>
@@ -175,6 +196,45 @@ const Step3Details = ({ formData, update, errors, setErrors, onNext, onBack }) =
         </select>
         <ErrorMsg msg={errors.programmeName} />
       </div>
+
+      {/* Generator */}
+      <div className="input-group">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="w-4 h-4 text-primary-500 rounded border-white/20 bg-white/5 focus:ring-primary-500 focus:ring-offset-gray-900"
+            checked={formData.generatorRequired || false}
+            onChange={e => {
+              update({ generatorRequired: e.target.checked });
+              if (!e.target.checked) {
+                update({ generatorReason: '' });
+                clearErr('generatorReason');
+              }
+            }}
+          />
+          <span className="text-sm text-slate-200">Generator Required</span>
+        </label>
+      </div>
+
+      {formData.generatorRequired && (
+        <div className="input-group animate-fade-in">
+          <label className="input-label" htmlFor="generator-reason">Reason for Generator *</label>
+          <select
+            id="generator-reason"
+            className="input"
+            value={formData.generatorReason || ''}
+            onChange={e => { update({ generatorReason: e.target.value }); clearErr('generatorReason'); }}
+          >
+            <option value="">— select —</option>
+            <option value="Exam">Exam</option>
+            <option value="Conference">Conference</option>
+            <option value="workshop">Workshop</option>
+            <option value="presentation">Presentation</option>
+            <option value="other">Other</option>
+          </select>
+          <ErrorMsg msg={errors.generatorReason} />
+        </div>
+      )}
 
       {/* Supervisor email */}
       <div className="input-group">

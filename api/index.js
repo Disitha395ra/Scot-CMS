@@ -50,6 +50,7 @@ const HEADERS = [
   'Booking ID', 'User Name', 'User Email', 'Supervisor Email',
   'Building', 'Room', 'Date', 'Start Time', 'End Time',
   'Seats', 'Reason', 'Status', 'Created At', 'Programme',
+  'Department', 'Generator Required', 'Generator Reason',
 ];
 
 const bookingToRow = (b) => [
@@ -67,6 +68,9 @@ const bookingToRow = (b) => [
   b.status || 'Pending',
   b.createdAt || new Date().toISOString(),
   b.programmeName || '',
+  b.department || '',
+  b.generatorRequired ? 'Yes' : 'No',
+  b.generatorReason || '',
 ];
 
 // ─── Email HTML Templates ───────────────────────────────────────────────────
@@ -106,7 +110,9 @@ const newBookingHtml = (b) => base(`
     <div class="field"><div class="lbl">Date</div><div class="val">${b.date}</div></div>
     <div class="field"><div class="lbl">Time</div><div class="val">${b.startTime} – ${b.endTime}</div></div>
     <div class="field"><div class="lbl">Seats</div><div class="val">${b.seats}</div></div>
+    <div class="field"><div class="lbl">Department</div><div class="val">${b.department || '—'}</div></div>
     <div class="field"><div class="lbl">Programme</div><div class="val">${b.programmeName || '—'}</div></div>
+    <div class="field"><div class="lbl">Generator</div><div class="val">${b.generatorRequired ? 'Yes (' + b.generatorReason + ')' : 'No'}</div></div>
     <div class="field"><div class="lbl">Status</div><div class="val"><span class="badge Pending">Pending</span></div></div>
   </div>
   <hr class="divider"/>
@@ -128,7 +134,9 @@ const statusUpdateHtml = (b) => {
       <div class="field"><div class="lbl">Date</div><div class="val">${b.date}</div></div>
       <div class="field"><div class="lbl">Time</div><div class="val">${b.startTime} – ${b.endTime}</div></div>
       <div class="field"><div class="lbl">Seats</div><div class="val">${b.seats}</div></div>
+      <div class="field"><div class="lbl">Department</div><div class="val">${b.department || '—'}</div></div>
       <div class="field"><div class="lbl">Programme</div><div class="val">${b.programmeName || '—'}</div></div>
+      <div class="field"><div class="lbl">Generator</div><div class="val">${b.generatorRequired ? 'Yes (' + b.generatorReason + ')' : 'No'}</div></div>
       <div class="field"><div class="lbl">Status</div><div class="val"><span class="badge ${b.status}">${b.status}</span></div></div>
     </div>
     <hr class="divider"/>
@@ -151,7 +159,7 @@ app.get('/api/stats', async (req, res) => {
     const spreadsheetId = getSpreadsheetId();
     if (!spreadsheetId) return res.status(500).json({ error: 'No sheet ID' });
 
-    const resp = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${SHEET_NAME}!A:N` });
+    const resp = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${SHEET_NAME}!A:Q` });
     const rows = resp.data.values || [];
     
     const dataRows = rows.slice(1); // skip header
@@ -217,7 +225,7 @@ app.post('/api/bookings/new', async (req, res) => {
 
       await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range:            `${SHEET_NAME}!A:N`,
+        range:            `${SHEET_NAME}!A:Q`,
         valueInputOption: 'RAW',
         insertDataOption: 'INSERT_ROWS',
         requestBody:      { values: [bookingToRow(booking)] },
