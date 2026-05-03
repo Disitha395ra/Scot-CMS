@@ -7,7 +7,7 @@ import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
-import { useAllBookings } from '../hooks/useBookings';
+import { useAllBookings, useBookings } from '../hooks/useBookings';
 import { useAuth } from '../store/AuthContext';
 import { formatDate, parseDateStr, combineDateAndTime, isPastDate } from '../utils/dateHelpers';
 import Badge from '../components/common/Badge';
@@ -28,7 +28,8 @@ const locales   = { 'en-US': enUS };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
 const DashboardPage = () => {
-  const { bookings, loading } = useAllBookings();
+  const { bookings, loading } = useAllBookings();           // all bookings → calendar
+  const { bookings: myBookings } = useBookings(false);       // own bookings → stats
   const { user, isAdmin }     = useAuth();
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [selectedDay,     setSelectedDay]     = useState(null);
@@ -87,30 +88,14 @@ const DashboardPage = () => {
     setSelectedDay(dStr);
   };
 
-  const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, today: 0 });
-  const [statsLoading, setStatsLoading] = useState(true);
-
-  // Fetch live stats from Google Sheets via backend
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch('/api/stats');
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch sheet stats:', err);
-      } finally {
-        setStatsLoading(false);
-      }
-    };
-    
-    fetchStats();
-    // Refresh stats every 10 seconds to keep it synced with Google Sheet edits
-    const interval = setInterval(fetchStats, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  // Compute stats from the user's own bookings (Firestore real-time)
+  const stats = useMemo(() => ({
+    total:    myBookings.length,
+    pending:  myBookings.filter(b => b.status === 'Pending').length,
+    approved: myBookings.filter(b => b.status === 'Approved').length,
+    today:    myBookings.filter(b => b.date === todayStr).length,
+  }), [myBookings, todayStr]);
+  const statsLoading = loading;
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8 animate-fade-in">
@@ -131,10 +116,10 @@ const DashboardPage = () => {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
-          { label: 'Total Bookings', value: stats.total,    color: 'text-primary-400', bg: 'bg-primary-500/10' },
-          { label: 'Pending',        value: stats.pending,  color: 'text-amber-400',   bg: 'bg-amber-500/10' },
-          { label: 'Approved',       value: stats.approved, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-          { label: "Today's Events", value: stats.today,    color: 'text-accent-400',  bg: 'bg-accent-500/10' },
+          { label: 'My Bookings',    value: stats.total,    color: 'text-primary-400', bg: 'bg-primary-500/10' },
+          { label: 'My Pending',     value: stats.pending,  color: 'text-amber-400',   bg: 'bg-amber-500/10' },
+          { label: 'My Approved',    value: stats.approved, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+          { label: "My Today",       value: stats.today,    color: 'text-accent-400',  bg: 'bg-accent-500/10' },
         ].map(s => (
           <div key={s.label} className="glass p-3 sm:p-4">
             <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl ${s.bg} flex items-center justify-center mb-2 sm:mb-3`}>
