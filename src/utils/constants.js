@@ -8,23 +8,26 @@ export const BUILDINGS = {
     'Board Room',
     'ME Lab',
     'EE Lab',
+    'COO Office',
+    'Admission Office',
     'Computer Lab',
-    'Student Classroom 1',
-    'Student Classroom 2',
+    'Classroom 101',
+    'Classroom 102',
+    'Classroom 103',
   ],
   'Building 2': [
     'Library',
     'Registar office',
-    'classroom 103',
-    'Student Classroom 101',
-    'Student Classroom 102',
-    'Student Classroom 201',
-    'Student Classroom 202',
+    'Classroom 301',
+    'Classroom 101',
+    'Classroom 102',
+    'Classroom 201',
+    'Classroom 202',
   ],
 };
 
 export const BOOKING_STATUS = {
-  PENDING:  'Pending',
+  PENDING: 'Pending',
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
 };
@@ -51,13 +54,23 @@ export const MAX_SEATS = 200;
 export const MIN_SEATS = 1;
 
 // Per-room seat capacity limits.
-// Keys match the room names in BUILDINGS exactly.
+// Keys MUST match the room names in BUILDINGS exactly.
 export const ROOM_CAPACITY = {
-  'classroom 103': 20,
-  'Student Classroom 101': 24,
-  'Student Classroom 102': 24,
-  'Student Classroom 201': 24,
-  'Student Classroom 202': 24,
-  // Building 2 third floor – 301 not listed in BUILDINGS yet; added for completeness
-  'Student Classroom 301': 30,
+  // Building 1
+  'Board Room':       20,
+  'ME Lab':           30,
+  'EE Lab':           30,
+  'COO Office':       15,
+  'Admission Office': 15,
+  'Computer Lab':     30,
+  'Classroom 101':    40,
+  'Classroom 102':    40,
+  'Classroom 103':    40,
+  // Building 2
+  'Library':          50,
+  'Registar office':  10,
+  'Classroom 301':    40,
+  'Classroom 201':    40,
+  'Classroom 202':    40,
 };
+

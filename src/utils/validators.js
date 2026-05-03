@@ -8,7 +8,7 @@ import { ALLOWED_DOMAIN, MIN_SEATS, MAX_SEATS } from './constants';
  * Validate all booking form fields before submission.
  * Returns { valid: boolean, errors: { field: string } }
  */
-export const validateBooking = ({ date, startTime, endTime, seats, reason, supervisorEmail, existingBookings, room }) => {
+export const validateBooking = ({ date, startTime, endTime, seats, reason, supervisorEmail, department, programmeName, existingBookings, room }) => {
   const errors = {};
 
   // Date checks
@@ -42,6 +42,16 @@ export const validateBooking = ({ date, startTime, endTime, seats, reason, super
   // Reason
   if (!reason || reason.trim().length < 3) {
     errors.reason = 'Please provide a reason (at least 3 characters).';
+  }
+
+  // Department
+  if (!department) {
+    errors.department = 'Please select a department.';
+  }
+
+  // Programme
+  if (!programmeName) {
+    errors.programmeName = 'Please select a programme name.';
   }
 
   // Supervisor email

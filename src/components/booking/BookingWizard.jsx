@@ -16,7 +16,6 @@ import { validateBooking }        from '../../utils/validators';
 import { useAuth }                from '../../store/AuthContext';
 
 import { sendNewBookingEmail }    from '../../services/emailService';
-import { appendBookingRow }       from '../../services/sheetsService';
 
 const STEPS = ['Building', 'Room', 'Details', 'Confirm'];
 
@@ -28,36 +27,28 @@ const BookingWizard = () => {
   const [loading, setLoading] = useState(false);
   const [errors,  setErrors]  = useState({});
   const [searchParams] = useSearchParams();
-  
-  // Find building from room
+
+  // Support deep-link: ?room=X&date=Y&start=Z
   const initialRoom = searchParams.get('room') || '';
-  let initialBuilding = '';
-  if (initialRoom) {
-    import('../../utils/constants').then(({ BUILDINGS }) => {
-       // Just a simple find, but since we can't do async inside useState easily, 
-       // let's do this synchronously if we just import BUILDINGS at the top.
-    });
-  }
 
   const [formData, setFormData] = useState({
-    building:        '',
-    room:            initialRoom,
-    date:            searchParams.get('date') || '',
-    startTime:       searchParams.get('start') || '',
-    endTime:         '',
-    seats:           '',
-    reason:          '',
-    supervisorEmail: '',
-    department:      '',
-    programmeName:   '',
+    building:          '',
+    rooms:             initialRoom ? [initialRoom] : [],   // ← array
+    date:              searchParams.get('date') || '',
+    startTime:         searchParams.get('start') || '',
+    endTime:           '',
+    seats:             '',
+    reason:            '',
+    supervisorEmail:   '',
+    department:        '',
+    programmeName:     '',
     generatorRequired: false,
-    generatorReason: '',
+    generatorReason:   '',
   });
 
-  // If initial values are set, jump to Step 3 details
+  // If deep-linked with room+date+start, jump straight to Step 3
   useEffect(() => {
     if (initialRoom && formData.date && formData.startTime) {
-      // we need the building, let's find it
       import('../../utils/constants').then(({ BUILDINGS }) => {
         let bld = '';
         for (const [b, rooms] of Object.entries(BUILDINGS)) {
@@ -65,7 +56,7 @@ const BookingWizard = () => {
         }
         if (bld) {
           setFormData(f => ({ ...f, building: bld }));
-          setStep(2); // Jump to details
+          setStep(2);
         }
       });
     }
@@ -83,7 +74,6 @@ const BookingWizard = () => {
   const handleSubmit = async () => {
     setLoading(true);
 
-    // Helper: race any promise against a timeout
     const withTimeout = (promise, ms, fallback) =>
       Promise.race([
         promise,
@@ -91,79 +81,83 @@ const BookingWizard = () => {
       ]);
 
     try {
-      // Overlap check — 5s timeout, fall back to empty list if Firestore is slow
-      const existing = await withTimeout(
-        getRoomBookingsForDate(formData.room, formData.date),
-        5000,
-        []
-      );
+      const rooms = formData.rooms;
 
-      const { valid, errors: errs } = validateBooking({
+      // ── 1. Field-level validation (date, time, seats, etc.) ───────────────
+      const { valid, errors: fieldErrs } = validateBooking({
         ...formData,
-        existingBookings: existing,
-        room: formData.room,
+        existingBookings: [],
+        room: rooms[0],
       });
 
-      if (!valid) {
-        setErrors(errs);
+      // ── 2. Overlap check per room in parallel ─────────────────────────────
+      const overlapErrors = [];
+      await Promise.all(
+        rooms.map(async (room) => {
+          const existing = await withTimeout(
+            getRoomBookingsForDate(room, formData.date),
+            5000,
+            []
+          );
+          const { errors: errs } = validateBooking({
+            ...formData,
+            existingBookings: existing,
+            room,
+          });
+          if (errs.overlap) overlapErrors.push(`${room}: ${errs.overlap}`);
+        })
+      );
+
+      if (!valid || overlapErrors.length > 0) {
+        const combined = { ...fieldErrs };
+        if (overlapErrors.length > 0) combined.overlap = overlapErrors.join('\n');
+        setErrors(combined);
         setLoading(false);
-        if (errs.date || errs.startTime || errs.endTime || errs.overlap) setStep(2);
+        if (fieldErrs.date || fieldErrs.startTime || fieldErrs.endTime || overlapErrors.length > 0) setStep(2);
         return;
       }
 
-      // Save booking to Firestore — 8s timeout
-      const bookingId = await withTimeout(
-        createBooking({
-          userId:          user.uid,
-          userEmail:       user.email,
-          userName:        user.displayName || user.email,
-          building:        formData.building,
-          room:            formData.room,
-          date:            formData.date,
-          startTime:       formData.startTime,
-          endTime:         formData.endTime,
-          seats:           Number(formData.seats),
-          reason:          formData.reason.trim(),
-          supervisorEmail: formData.supervisorEmail.trim().toLowerCase(),
-          department:      formData.department,
-          programmeName:   formData.programmeName,
-          generatorRequired: formData.generatorRequired,
-          generatorReason: formData.generatorRequired ? formData.generatorReason : '',
-        }),
-        8000,
+      // ── 3. Create one booking doc per room in parallel ────────────────────
+      const commonPayload = {
+        userId:            user.uid,
+        userEmail:         user.email,
+        userName:          user.displayName || user.email,
+        building:          formData.building,
+        date:              formData.date,
+        startTime:         formData.startTime,
+        endTime:           formData.endTime,
+        seats:             Number(formData.seats),
+        reason:            formData.reason.trim(),
+        supervisorEmail:   formData.supervisorEmail.trim().toLowerCase(),
+        department:        formData.department,
+        programmeName:     formData.programmeName,
+        generatorRequired: formData.generatorRequired,
+        generatorReason:   formData.generatorRequired ? formData.generatorReason : '',
+      };
+
+      const bookingIds = await withTimeout(
+        Promise.all(rooms.map(room => createBooking({ ...commonPayload, room }))),
+        10000,
         null
       );
 
-      if (!bookingId) {
+      if (!bookingIds) {
         throw new Error('Firestore timed out. Please check your Firebase setup.');
       }
 
-      // Show success immediately
-      toast.success('✅ Your request has been submitted! Please wait for admin approval.', {
-        duration: 5000,
-      });
+      const roomLabel = rooms.length === 1 ? rooms[0] : `${rooms.length} rooms`;
+      toast.success(`✅ ${roomLabel} booked! Waiting for admin approval.`, { duration: 5000 });
 
-      // Fire email + sheet recording in background (non-blocking)
-      const payload = {
-        id:              bookingId,
-        userEmail:       user.email,
-        userName:        user.displayName || user.email,
-        building:        formData.building,
-        room:            formData.room,
-        date:            formData.date,
-        startTime:       formData.startTime,
-        endTime:         formData.endTime,
-        seats:           Number(formData.seats),
-        reason:          formData.reason.trim(),
-        supervisorEmail: formData.supervisorEmail.trim().toLowerCase(),
-        department:      formData.department,
-        programmeName:   formData.programmeName,
-        generatorRequired: formData.generatorRequired,
-        generatorReason: formData.generatorRequired ? formData.generatorReason : '',
-        status:          'Pending',
-      };
-      sendNewBookingEmail(payload);  // fire and forget
-      appendBookingRow(payload);     // fire and forget
+      // ── 4. Fire email (backend handles sheet row too) ─────────────────────
+      bookingIds.forEach((bookingId, idx) => {
+        const payload = {
+          ...commonPayload,
+          id:     bookingId,
+          room:   rooms[idx],
+          status: 'Pending',
+        };
+        sendNewBookingEmail(payload); // backend also writes to Google Sheet
+      });
 
       navigate('/');
     } catch (err) {
@@ -181,26 +175,26 @@ const BookingWizard = () => {
   return (
     <div className="max-w-2xl mx-auto">
       {/* Progress bar */}
-      <div className="flex items-center mb-8 gap-0">
+      <div className="flex items-center mb-6 sm:mb-8 gap-0">
         {STEPS.map((label, i) => (
           <React.Fragment key={label}>
             <div className="flex flex-col items-center">
               <div className={i < step ? 'step-done' : i === step ? 'step-active' : 'step-inactive'}>
                 {i < step ? '✓' : i + 1}
               </div>
-              <span className={`text-xs mt-1.5 font-medium ${i === step ? 'text-primary-300' : 'text-slate-600'}`}>
+              <span className={`text-[10px] sm:text-xs mt-1 sm:mt-1.5 font-medium hidden xs:block ${i === step ? 'text-primary-300' : 'text-slate-600'}`}>
                 {label}
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className={`flex-1 h-0.5 mx-2 mb-4 rounded-full transition-all duration-500 ${i < step ? 'bg-emerald-500' : 'bg-white/10'}`} />
+              <div className={`flex-1 h-0.5 mx-1 sm:mx-2 mb-3 sm:mb-4 rounded-full transition-all duration-500 ${i < step ? 'bg-emerald-500' : 'bg-white/10'}`} />
             )}
           </React.Fragment>
         ))}
       </div>
 
       {/* Step content */}
-      <div className="glass p-6 sm:p-8 animate-slide-up">
+      <div className="glass p-4 sm:p-6 md:p-8 animate-slide-up">
         {step === 0 && <Step1Building {...stepProps} onNext={next} />}
         {step === 1 && <Step2Room     {...stepProps} onNext={next} onBack={back} />}
         {step === 2 && <Step3Details  {...stepProps} onNext={next} onBack={back} />}

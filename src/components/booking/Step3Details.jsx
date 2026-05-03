@@ -30,49 +30,61 @@ const Step3Details = ({ formData, update, errors, setErrors, onNext, onBack }) =
     : TIME_SLOTS;
 
   const handleNext = () => {
-    // Quick front-end check before hitting Firestore
     const errs = {};
     if (!formData.date)            errs.date            = 'Please select a date.';
     if (!formData.startTime)       errs.startTime       = 'Please select a start time.';
     if (!formData.endTime)         errs.endTime         = 'Please select an end time.';
-    if (!formData.seats)           errs.seats           = 'Please enter number of seats.';
+    if (formData.startTime && formData.endTime && formData.endTime <= formData.startTime)
+                                   errs.endTime         = 'End time must be after start time.';
+    if (!formData.seats || isNaN(Number(formData.seats)) || Number(formData.seats) < 1)
+                                   errs.seats           = 'Please enter a valid number of seats.';
     if (!formData.reason?.trim())  errs.reason          = 'Please provide a reason.';
     if (!formData.department)      errs.department      = 'Please select a department.';
     if (!formData.programmeName)   errs.programmeName   = 'Please select a programme name.';
-    if (formData.generatorRequired && !formData.generatorReason) errs.generatorReason = 'Please select a reason for the generator.';
+    if (formData.generatorRequired && !formData.generatorReason)
+                                   errs.generatorReason = 'Please select a reason for the generator.';
     if (!formData.supervisorEmail) errs.supervisorEmail = 'Supervisor email is required.';
+    else if (!formData.supervisorEmail.includes('@'))
+                                   errs.supervisorEmail = 'Please enter a valid email address.';
 
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    const roomMaxSeats = ROOM_CAPACITY[formData.room] || 200;
-    if (Number(formData.seats) > roomMaxSeats) {
-      const msg = `You exceed max capacity of this classroom. Max capacity of this room is ${roomMaxSeats}. If you want to exceed this number, enter the reason. Admin panel will review it and inform you.\n\nDo you want to proceed anyway?`;
-      if (!window.confirm(msg)) {
-        return;
-      }
+    // Capacity warning — use max capacity across all selected rooms
+    const rooms = formData.rooms || [];
+    const maxForSelectedRooms = rooms.length > 0
+      ? Math.max(...rooms.map(r => ROOM_CAPACITY[r] || 200))
+      : 200;
+
+    if (Number(formData.seats) > maxForSelectedRooms) {
+      const msg = `You exceed the max capacity (${maxForSelectedRooms} seats) for one or more selected rooms. Admin will review and inform you.\n\nDo you want to proceed anyway?`;
+      if (!window.confirm(msg)) return;
     }
 
     setErrors({});
     onNext();
   };
 
-  const roomMaxSeats = ROOM_CAPACITY[formData.room] || 200;
-  const isOverCapacity = Number(formData.seats) > roomMaxSeats;
+  // Inline capacity indicator: use the smallest capacity among selected rooms
+  const rooms = formData.rooms || [];
+  const roomMaxSeats = rooms.length > 0
+    ? Math.min(...rooms.map(r => ROOM_CAPACITY[r] || 200))
+    : 200;
+  const isOverCapacity = formData.seats && Number(formData.seats) > roomMaxSeats;
 
   return (
     <div className="space-y-5 animate-fade-in">
       <div>
         <p className="text-xs text-primary-400 font-semibold uppercase tracking-wider mb-1">
-          {formData.building} · {formData.room}
+          {formData.building} · {rooms.join(', ') || '—'}
         </p>
         <h2 className="text-xl font-bold text-white mb-1">Booking Details</h2>
-        <p className="text-sm text-slate-400">Fill in when you need the room.</p>
+        <p className="text-sm text-slate-400">Fill in when you need the room{rooms.length > 1 ? 's' : ''}.</p>
       </div>
 
       {/* Overlap error */}
       {errors.overlap && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 animate-fade-in">
-          <p className="text-sm text-red-400">{errors.overlap}</p>
+          <p className="text-sm text-red-400 whitespace-pre-line">{errors.overlap}</p>
         </div>
       )}
 
@@ -101,7 +113,7 @@ const Step3Details = ({ formData, update, errors, setErrors, onNext, onBack }) =
             id="start-time"
             className="input"
             value={formData.startTime}
-            onChange={e => { update({ startTime: e.target.value, endTime: '' }); clearErr('startTime'); }}
+            onChange={e => { update({ startTime: e.target.value, endTime: '' }); clearErr('startTime'); clearErr('endTime'); }}
           >
             <option value="">— select —</option>
             {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
@@ -132,7 +144,7 @@ const Step3Details = ({ formData, update, errors, setErrors, onNext, onBack }) =
           id="seats"
           type="number"
           min="1"
-          max="200"
+          max="500"
           className="input"
           placeholder="e.g. 30"
           value={formData.seats}
@@ -140,7 +152,7 @@ const Step3Details = ({ formData, update, errors, setErrors, onNext, onBack }) =
         />
         {isOverCapacity && (
           <p className="text-xs text-yellow-400 mt-2 animate-fade-in bg-yellow-400/10 p-2 rounded border border-yellow-400/30">
-            ⚠️ You exceed max capacity of this classroom. Max capacity of this room is {roomMaxSeats}. If you want to exceed this number, enter the reason. Admin panel will review it and inform you.
+            ⚠️ Exceeds the minimum capacity ({roomMaxSeats} seats) of a selected room. Admin will review and inform you.
           </p>
         )}
         <ErrorMsg msg={errors.seats} />
@@ -170,10 +182,10 @@ const Step3Details = ({ formData, update, errors, setErrors, onNext, onBack }) =
           onChange={e => { update({ department: e.target.value }); clearErr('department'); }}
         >
           <option value="">— select —</option>
-          <option value="C & C">C & C</option>
-          <option value="E & E">E & E</option>
+          <option value="C & C">C &amp; C</option>
+          <option value="E & E">E &amp; E</option>
           <option value="SoBM">SoBM</option>
-          <option value="M & M">M & M</option>
+          <option value="M & M">M &amp; M</option>
           <option value="Other">Other</option>
         </select>
         <ErrorMsg msg={errors.department} />
@@ -191,28 +203,29 @@ const Step3Details = ({ formData, update, errors, setErrors, onNext, onBack }) =
           <option value="">— select —</option>
           <option value="HND">HND</option>
           <option value="DMU">DMU</option>
-          <option value="C&G">C&G</option>
+          <option value="C&G">C&amp;G</option>
           <option value="Other">Other</option>
         </select>
         <ErrorMsg msg={errors.programmeName} />
       </div>
 
-      {/* Generator */}
+      {/* Generator Required */}
       <div className="input-group">
-        <label className="flex items-center gap-2 cursor-pointer">
+        <label className="flex items-center gap-3 cursor-pointer select-none">
           <input
             type="checkbox"
-            className="w-4 h-4 text-primary-500 rounded border-white/20 bg-white/5 focus:ring-primary-500 focus:ring-offset-gray-900"
+            className="w-4 h-4 rounded border-white/20 bg-white/5 accent-violet-500 cursor-pointer"
             checked={formData.generatorRequired || false}
             onChange={e => {
-              update({ generatorRequired: e.target.checked });
-              if (!e.target.checked) {
-                update({ generatorReason: '' });
-                clearErr('generatorReason');
-              }
+              // Single update call to avoid race condition
+              update({
+                generatorRequired: e.target.checked,
+                generatorReason: e.target.checked ? formData.generatorReason : '',
+              });
+              if (!e.target.checked) clearErr('generatorReason');
             }}
           />
-          <span className="text-sm text-slate-200">Generator Required</span>
+          <span className="text-sm text-slate-200 font-medium">Generator Required</span>
         </label>
       </div>
 
@@ -228,9 +241,9 @@ const Step3Details = ({ formData, update, errors, setErrors, onNext, onBack }) =
             <option value="">— select —</option>
             <option value="Exam">Exam</option>
             <option value="Conference">Conference</option>
-            <option value="workshop">Workshop</option>
-            <option value="presentation">Presentation</option>
-            <option value="other">Other</option>
+            <option value="Workshop">Workshop</option>
+            <option value="Presentation">Presentation</option>
+            <option value="Other">Other</option>
           </select>
           <ErrorMsg msg={errors.generatorReason} />
         </div>

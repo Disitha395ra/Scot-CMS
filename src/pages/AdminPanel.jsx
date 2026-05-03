@@ -42,14 +42,15 @@ const AdminPanel = () => {
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(b =>
-        (b.room         || '').toLowerCase().includes(q) ||
-        (b.userName     || '').toLowerCase().includes(q) ||
-        (b.userEmail    || '').toLowerCase().includes(q) ||
-        (b.building     || '').toLowerCase().includes(q) ||
-        (b.reason       || '').toLowerCase().includes(q) ||
-        (b.programmeName|| '').toLowerCase().includes(q) ||
-        (b.department   || '').toLowerCase().includes(q) ||
-        (b.generatorReason|| '').toLowerCase().includes(q)
+        (b.room            || '').toLowerCase().includes(q) ||
+        (b.userName        || '').toLowerCase().includes(q) ||
+        (b.userEmail       || '').toLowerCase().includes(q) ||
+        (b.supervisorEmail || '').toLowerCase().includes(q) ||
+        (b.building        || '').toLowerCase().includes(q) ||
+        (b.reason          || '').toLowerCase().includes(q) ||
+        (b.programmeName   || '').toLowerCase().includes(q) ||
+        (b.department      || '').toLowerCase().includes(q) ||
+        (b.generatorReason || '').toLowerCase().includes(q)
       );
     }
     return list;
@@ -78,7 +79,7 @@ const AdminPanel = () => {
     ]);
     
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -86,6 +87,7 @@ const AdminPanel = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url); // prevent memory leak
   };
 
   const executeStatusUpdate = async () => {
