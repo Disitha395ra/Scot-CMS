@@ -4,10 +4,10 @@
 export const ALLOWED_DOMAIN = 'scot.lk';
 
 export const BUILDINGS = {
-  'Building 1': [
+  'Building 1 (Main)': [
     'Board Room',
-    'ME Lab',
-    'EE Lab',
+    'Mechatronics Lab',
+    'E&E Lab',
     'COO Office',
     'Admission Office',
     'Computer Lab',
@@ -15,7 +15,7 @@ export const BUILDINGS = {
     'Classroom 102',
     'Classroom 103',
   ],
-  'Building 2': [
+  'Building 2 (New)': [
     'Library',
     'Registar office',
     'Classroom 301',
