@@ -20,7 +20,8 @@ const DayViewModal = ({ isOpen, onClose, date, bookings }) => {
     const roomBookings = bookings.filter(b => 
       b.date === date && 
       b.room === selectedRoom && 
-      b.status !== BOOKING_STATUS.REJECTED
+      b.status !== BOOKING_STATUS.REJECTED &&
+      b.status !== BOOKING_STATUS.CANCELLED
     );
 
     const intervals = [

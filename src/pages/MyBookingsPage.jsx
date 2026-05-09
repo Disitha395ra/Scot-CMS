@@ -3,7 +3,9 @@
 
 import React, { useState } from 'react';
 import { useBookings }      from '../hooks/useBookings';
-import { deleteBooking }    from '../services/bookingService';
+import { updateBookingStatus } from '../services/bookingService';
+import { updateSheetStatus } from '../services/sheetsService';
+import { sendStatusUpdateEmail } from '../services/emailService';
 import { useAuth }          from '../store/AuthContext';
 import Badge                from '../components/common/Badge';
 import Spinner              from '../components/common/Spinner';
@@ -32,10 +34,22 @@ const MyBookingsPage = () => {
     if (!toDelete) return;
     setDeleting(true);
     try {
-      await deleteBooking(toDelete);
+      const booking = bookings.find(b => b.id === toDelete);
+      if (!booking) throw new Error('Booking not found');
+
+      // 1. Update Firestore status
+      await updateBookingStatus(toDelete, BOOKING_STATUS.CANCELLED, 'Cancelled by user');
+      
+      // 2. Update Google Sheet
+      await updateSheetStatus(toDelete, BOOKING_STATUS.CANCELLED);
+      
+      // 3. Notify (Optional, but good for consistency)
+      await sendStatusUpdateEmail({ ...booking, status: BOOKING_STATUS.CANCELLED, adminReason: 'Cancelled by user' });
+
       toast.success('Booking cancelled.');
       setToDelete(null);
-    } catch {
+    } catch (err) {
+      console.error('[handleDelete]', err);
       toast.error('Failed to cancel booking. Please try again.');
     } finally {
       setDeleting(false);

@@ -230,7 +230,7 @@ app.post('/api/bookings/new', async (req, res) => {
         const rEnd    = row[8];  // I
         const rStatus = row[11]; // L
 
-        if (rRoom === booking.room && rDate === booking.date && rStatus !== 'Rejected') {
+        if (rRoom === booking.room && rDate === booking.date && rStatus !== 'Rejected' && rStatus !== 'Cancelled') {
           return timesOverlap(booking.startTime, booking.endTime, rStart, rEnd);
         }
         return false;

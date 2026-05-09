@@ -30,6 +30,7 @@ export const BOOKING_STATUS = {
   PENDING: 'Pending',
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
+  CANCELLED: 'Cancelled',
 };
 
 // Hardcoded admin emails (fallback — primary source is Firestore /admins collection)

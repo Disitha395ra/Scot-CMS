@@ -47,7 +47,7 @@ const DashboardPage = () => {
   // Calendar events
   const calendarEvents = useMemo(() =>
     bookings
-      .filter(b => b.status !== 'Rejected')
+      .filter(b => b.status !== 'Rejected' && b.status !== 'Cancelled')
       .map(b => ({
         id:    b.id,
         title: `${b.room} — ${b.startTime}`,
