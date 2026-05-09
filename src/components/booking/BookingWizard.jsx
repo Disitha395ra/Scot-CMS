@@ -10,8 +10,7 @@ import Step2Room     from './Step2Room';
 import Step3Details  from './Step3Details';
 import Step4Confirm  from './Step4Confirm';
 
-import { createBooking }          from '../../services/bookingService';
-import { getRoomBookingsForDate } from '../../services/bookingService';
+import { createBooking, getRoomBookingsForDate, deleteBooking } from '../../services/bookingService';
 import { validateBooking }        from '../../utils/validators';
 import { useAuth }                from '../../store/AuthContext';
 
@@ -145,24 +144,42 @@ const BookingWizard = () => {
         throw new Error('Firestore timed out. Please check your Firebase setup.');
       }
 
+      // ── 4. Fire email (backend handles sheet row too) ─────────────────────
+      // We process these one by one or in parallel, but we must check for errors
+      const emailResults = await Promise.allSettled(
+        bookingIds.map((bookingId, idx) => {
+          const payload = {
+            ...commonPayload,
+            id:     bookingId,
+            room:   rooms[idx],
+            status: 'Pending',
+          };
+          return sendNewBookingEmail(payload);
+        })
+      );
+
+      const failedEmails = emailResults.filter(r => r.status === 'rejected');
+      
+      if (failedEmails.length > 0) {
+        // Rollback Firestore if backend fails (e.g., due to double booking in sheet)
+        await Promise.all(bookingIds.map(id => deleteBooking(id)));
+        
+        const errorMsg = failedEmails[0].reason?.message || 'Conflict detected. This slot might have just been taken.';
+        throw new Error(errorMsg);
+      }
+
       const roomLabel = rooms.length === 1 ? rooms[0] : `${rooms.length} rooms`;
       toast.success(`✅ ${roomLabel} booked! Waiting for admin approval.`, { duration: 5000 });
-
-      // ── 4. Fire email (backend handles sheet row too) ─────────────────────
-      bookingIds.forEach((bookingId, idx) => {
-        const payload = {
-          ...commonPayload,
-          id:     bookingId,
-          room:   rooms[idx],
-          status: 'Pending',
-        };
-        sendNewBookingEmail(payload); // backend also writes to Google Sheet
-      });
 
       navigate('/');
     } catch (err) {
       console.error('[handleSubmit]', err);
       toast.error(err.message || 'Failed to submit booking. Please try again.');
+      // If we got here and have errors, maybe stay on Step 2 if it's a conflict
+      if (err.message.includes('booked') || err.message.includes('slot')) {
+        setErrors({ overlap: err.message });
+        setStep(2);
+      }
     } finally {
       setLoading(false);
     }

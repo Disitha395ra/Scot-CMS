@@ -73,6 +73,9 @@ const bookingToRow = (b) => [
   b.generatorReason || '',
 ];
 
+// Helper: Check if two time ranges overlap (HH:MM strings)
+const timesOverlap = (s1, e1, s2, e2) => s1 < e2 && e1 > s2;
+
 // ─── Email HTML Templates ───────────────────────────────────────────────────
 
 const base = (content) => `<!DOCTYPE html>
@@ -207,22 +210,46 @@ app.post('/api/bookings/new', async (req, res) => {
       console.log('[EMAIL SENT] New booking →', recipients.join(', '));
     })(),
 
-    // Append to sheet
+    // Append to sheet (with conflict check)
     (async () => {
       const sheets = getSheets();
       if (!sheets) return;
       const spreadsheetId = getSpreadsheetId();
       if (!spreadsheetId) { console.warn('[SHEETS] No spreadsheet ID.'); return; }
 
-      // Ensure header row exists
-      const check = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${SHEET_NAME}!A1` });
-      if (!check.data.values || !check.data.values[0]) {
+      // 1. Fetch existing bookings for this date/room
+      const resp = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${SHEET_NAME}!A:Q` });
+      const rows = resp.data.values || [];
+      const dataRows = rows.slice(1); // skip header
+
+      // 2. Check for overlaps (Status != Rejected)
+      const isOverlapping = dataRows.some(row => {
+        const rRoom   = row[5];  // F
+        const rDate   = row[6];  // G
+        const rStart  = row[7];  // H
+        const rEnd    = row[8];  // I
+        const rStatus = row[11]; // L
+
+        if (rRoom === booking.room && rDate === booking.date && rStatus !== 'Rejected') {
+          return timesOverlap(booking.startTime, booking.endTime, rStart, rEnd);
+        }
+        return false;
+      });
+
+      if (isOverlapping) {
+        console.warn(`[SHEETS] Conflict detected for ${booking.id} in ${booking.room} on ${booking.date}`);
+        throw new Error('This slot is already booked. Please refresh and try again.');
+      }
+
+      // 3. Ensure header row exists (if empty)
+      if (rows.length === 0) {
         await sheets.spreadsheets.values.update({
           spreadsheetId, range: `${SHEET_NAME}!A1`, valueInputOption: 'RAW',
           requestBody: { values: [HEADERS] },
         });
       }
 
+      // 4. Append
       await sheets.spreadsheets.values.append({
         spreadsheetId,
         range:            `${SHEET_NAME}!A:Q`,
@@ -234,11 +261,13 @@ app.post('/api/bookings/new', async (req, res) => {
     })(),
   ]);
 
-  results.forEach((r, i) => {
-    if (r.status === 'rejected') console.error(`[ERROR] Task ${i === 0 ? 'email' : 'sheets'}:`, r.reason?.message || r.reason);
-  });
-
-  res.json({ ok: true });
+  const someFailed = results.some(r => r.status === 'rejected');
+  if (someFailed) {
+    const errorMsg = results.find(r => r.status === 'rejected')?.reason?.message || 'Request partially failed';
+    res.status(409).json({ ok: false, error: errorMsg });
+  } else {
+    res.json({ ok: true });
+  }
 });
 
 // Status update → email + update sheet cell

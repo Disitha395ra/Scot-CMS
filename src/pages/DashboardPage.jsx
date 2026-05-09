@@ -38,19 +38,23 @@ const DashboardPage = () => {
   // Today's bookings (sorted by start time)
   const todayStr    = format(new Date(), 'yyyy-MM-dd');
   const todayEvents = useMemo(
-    () => bookings.filter(b => b.date === todayStr).sort((a, b) => a.startTime.localeCompare(b.startTime)),
+    () => bookings
+      .filter(b => b.date === todayStr && b.status !== 'Rejected')
+      .sort((a, b) => a.startTime.localeCompare(b.startTime)),
     [bookings, todayStr],
   );
 
   // Calendar events
   const calendarEvents = useMemo(() =>
-    bookings.map(b => ({
-      id:    b.id,
-      title: `${b.room} — ${b.startTime}`,
-      start: combineDateAndTime(b.date, b.startTime) || new Date(),
-      end:   combineDateAndTime(b.date, b.endTime) || new Date(),
-      resource: b,
-    })),
+    bookings
+      .filter(b => b.status !== 'Rejected')
+      .map(b => ({
+        id:    b.id,
+        title: `${b.room} — ${b.startTime}`,
+        start: combineDateAndTime(b.date, b.startTime) || new Date(),
+        end:   combineDateAndTime(b.date, b.endTime) || new Date(),
+        resource: b,
+      })),
     [bookings],
   );
 

@@ -64,7 +64,7 @@ export const validateBooking = ({ date, startTime, endTime, seats, reason, super
   // Overlap check (only if date+times are valid so far)
   if (!errors.date && !errors.startTime && !errors.endTime && existingBookings && room) {
     const hasOverlap = existingBookings
-      .filter(b => b.room === room && b.date === date)
+      .filter(b => b.room === room && b.date === date && b.status !== 'Rejected')
       .some(b => timesOverlap(startTime, endTime, b.startTime, b.endTime));
 
     if (hasOverlap) {
