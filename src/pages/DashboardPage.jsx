@@ -91,6 +91,38 @@ const DashboardPage = () => {
     }
     setSelectedDay(dStr);
   };
+  
+  // ─── Custom Calendar Components ──────────────────────────────────────────
+  
+  const CustomEvent = ({ event }) => {
+    const b = event.resource;
+    const isApproved = b.status === 'Approved';
+    return (
+      <div className="flex flex-col h-full leading-tight py-0.5">
+        <div className="flex items-center gap-1 overflow-hidden">
+          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isApproved ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+          <span className="truncate font-bold text-[10px] sm:text-[11px] uppercase tracking-tighter">
+            {b.room.split(' ')[0]}
+          </span>
+        </div>
+        <div className="text-[9px] opacity-80 truncate hidden sm:block">
+          {b.startTime} – {b.userName?.split(' ')[0] || 'User'}
+        </div>
+      </div>
+    );
+  };
+
+  const eventPropGetter = (event) => {
+    const status = event.resource.status;
+    let className = 'calendar-event-base';
+    
+    if (status === 'Approved') className += ' event-approved';
+    else if (status === 'Pending') className += ' event-pending';
+    
+    return { className };
+  };
+
+  // ─── Stats ───────────────────────────────────────────────────────────────
 
   // Compute stats from the user's own bookings (Firestore real-time)
   const stats = useMemo(() => ({
@@ -158,7 +190,11 @@ const DashboardPage = () => {
               onDrillDown={(date) => handleDayClick(date)}
               longPressThreshold={10}
               dayPropGetter={dayPropGetter}
-              eventPropGetter={() => ({})}
+              eventPropGetter={eventPropGetter}
+              popup={true}
+              components={{
+                event: CustomEvent,
+              }}
               className={`transition-opacity duration-300 ${loading && calendarEvents.length === 0 ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}
             />
           </div>
