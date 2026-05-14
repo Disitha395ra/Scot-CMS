@@ -26,10 +26,11 @@ const STATUS_FILTERS = ['All', BOOKING_STATUS.PENDING, BOOKING_STATUS.APPROVED, 
 
 const AdminPanel = () => {
   const { bookings, loading } = useBookings(true); // fetch all
-  const [filter,  setFilter]  = useState('All');
-  const [search,  setSearch]  = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [updating, setUpdating] = useState({});   // { bookingId: true }
+  const [filter,    setFilter]    = useState('All');
+  const [search,    setSearch]    = useState('');
+  const [dateFrom,  setDateFrom]  = useState('');
+  const [dateTo,    setDateTo]    = useState('');
+  const [updating,  setUpdating]  = useState({});   // { bookingId: true }
   
   // Modal state
   const [actionModal, setActionModal] = useState({ isOpen: false, bookingId: null, status: null });
@@ -38,7 +39,9 @@ const AdminPanel = () => {
   const filtered = useMemo(() => {
     let list = bookings;
     if (filter !== 'All') list = list.filter(b => b.status === filter);
-    if (dateFilter) list = list.filter(b => b.date === dateFilter);
+    // Date-range filter — inclusive on both ends
+    if (dateFrom) list = list.filter(b => b.date >= dateFrom);
+    if (dateTo)   list = list.filter(b => b.date <= dateTo);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(b =>
@@ -54,7 +57,7 @@ const AdminPanel = () => {
       );
     }
     return list;
-  }, [bookings, filter, search, dateFilter]);
+  }, [bookings, filter, search, dateFrom, dateTo]);
 
   const handleDownloadCSV = () => {
     if (filtered.length === 0) return toast.error('No records to download');
@@ -83,7 +86,10 @@ const AdminPanel = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `bookings_export_${new Date().toISOString().split('T')[0]}.csv`);
+    const rangeLabel = dateFrom || dateTo
+      ? `_${dateFrom || 'start'}_to_${dateTo || 'end'}`
+      : `_all_${new Date().toISOString().split('T')[0]}`;
+    link.setAttribute('download', `bookings_export${rangeLabel}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -159,14 +165,45 @@ const AdminPanel = () => {
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          {/* Date Filter */}
-          <div className="relative">
-            <input
-              type="date"
-              className="input w-full sm:w-auto"
-              value={dateFilter}
-              onChange={e => setDateFilter(e.target.value)}
-            />
+          {/* Date Range Filter */}
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <div className="relative flex-1 sm:flex-none">
+              <label className="absolute -top-2 left-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider bg-[#0f172a] px-1">
+                From
+              </label>
+              <input
+                id="date-from"
+                type="date"
+                className="input w-full sm:w-auto pt-3"
+                value={dateFrom}
+                max={dateTo || undefined}
+                onChange={e => setDateFrom(e.target.value)}
+              />
+            </div>
+            <span className="text-slate-500 text-sm hidden sm:block">→</span>
+            <div className="relative flex-1 sm:flex-none">
+              <label className="absolute -top-2 left-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider bg-[#0f172a] px-1">
+                To
+              </label>
+              <input
+                id="date-to"
+                type="date"
+                className="input w-full sm:w-auto pt-3"
+                value={dateTo}
+                min={dateFrom || undefined}
+                onChange={e => setDateTo(e.target.value)}
+              />
+            </div>
+            {(dateFrom || dateTo) && (
+              <button
+                id="clear-date-range"
+                onClick={() => { setDateFrom(''); setDateTo(''); }}
+                className="btn-secondary btn-sm whitespace-nowrap"
+                title="Clear date range"
+              >
+                ✕ Clear
+              </button>
+            )}
           </div>
         </div>
         {/* Status filter - scrollable row on mobile */}
